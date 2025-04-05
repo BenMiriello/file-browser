@@ -12,43 +12,53 @@
         <header class="header">
             <h1>Tailscale File Browser</h1>
             <div class="path-navigation">
-                <input type="text" id="current-path" readonly>
+                <input type="text" id="current-path">
                 <button id="parent-dir"><i class="fas fa-level-up-alt"></i> Parent Directory</button>
                 <button id="home-dir"><i class="fas fa-home"></i> Home</button>
                 <button id="refresh"><i class="fas fa-sync-alt"></i> Refresh</button>
+                <button id="toggle-hidden"><i class="fas fa-eye-slash"></i> <span id="toggle-text">Show Hidden</span></button>
             </div>
         </header>
         
         <main class="main-content">
             <div class="file-list-container">
-                <table class="file-list">
-                    <thead>
-                        <tr>
-                            <th>Type</th>
-                            <th>Name</th>
-                            <th>Size</th>
-                            <th>Modified</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody id="file-list-body">
-                        <!-- File list will be populated here -->
-                    </tbody>
-                </table>
-            </div>
-            
-            <div class="file-preview" id="file-preview">
-                <div class="file-preview-content" id="file-preview-content">
-                    <div class="preview-placeholder">
-                        <i class="fas fa-file-alt"></i>
-                        <p>Select a file to preview</p>
-                    </div>
+                <div class="file-list-wrapper">
+                    <table class="file-list">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Size</th>
+                                <th>Modified</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="file-list-body">
+                            <!-- File list will be populated here -->
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </main>
         
         <div class="overlay" id="loading-overlay">
             <div class="spinner"></div>
+        </div>
+        
+        <div class="modal" id="preview-modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3 id="preview-filename">File Preview</h3>
+                    <button class="close-modal" id="close-preview">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="file-preview-content" id="file-preview-content">
+                        <div class="preview-placeholder">
+                            <i class="fas fa-file-alt"></i>
+                            <p>Loading preview...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
     

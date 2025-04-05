@@ -5,12 +5,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const parentDirButton = document.getElementById('parent-dir');
     const homeDirButton = document.getElementById('home-dir');
     const refreshButton = document.getElementById('refresh');
-    const filePreview = document.getElementById('file-preview');
+    const toggleHiddenButton = document.getElementById('toggle-hidden');
+    const toggleText = document.getElementById('toggle-text');
+    const previewModal = document.getElementById('preview-modal');
+    const closePreviewButton = document.getElementById('close-preview');
+    const previewFilename = document.getElementById('preview-filename');
     const filePreviewContent = document.getElementById('file-preview-content');
     const loadingOverlay = document.getElementById('loading-overlay');
     
     // Current state
-    let currentPath = '/';
+    let currentPath = '/home/simonsays/';
+    let showHiddenFiles = false;
     
     // Initialize the app
     init();
@@ -23,6 +28,22 @@ document.addEventListener('DOMContentLoaded', () => {
         parentDirButton.addEventListener('click', navigateToParentDirectory);
         homeDirButton.addEventListener('click', navigateToHomeDirectory);
         refreshButton.addEventListener('click', refreshCurrentDirectory);
+        toggleHiddenButton.addEventListener('click', toggleHiddenFiles);
+        closePreviewButton.addEventListener('click', closePreviewModal);
+        
+        // Allow path input and navigation
+        currentPathInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                loadDirectoryContents(currentPathInput.value);
+            }
+        });
+        
+        // Close modal when clicking outside content
+        previewModal.addEventListener('click', (e) => {
+            if (e.target === previewModal) {
+                closePreviewModal();
+            }
+        });
     }
     
     async function loadDirectoryContents(path) {
@@ -50,6 +71,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // Clear the current list
         fileListBody.innerHTML = '';
         
+        // Filter hidden files if needed
+        if (!showHiddenFiles) {
+            files = files.filter(file => !file.name.startsWith('.'));
+        }
+        
         // Sort files (directories first, then by name)
         files.sort((a, b) => {
             if (a.isDirectory && !b.isDirectory) return -1;
@@ -60,6 +86,11 @@ document.addEventListener('DOMContentLoaded', () => {
         // Create table rows for each file
         files.forEach(file => {
             const row = document.createElement('tr');
+            row.setAttribute('data-path', file.path);
+            row.setAttribute('data-is-dir', file.isDirectory);
+            if (!file.isDirectory) {
+                row.setAttribute('data-type', file.type);
+            }
             
             // Determine icon based on file type
             let iconClass = 'fa-file other-icon';
@@ -82,15 +113,19 @@ document.addEventListener('DOMContentLoaded', () => {
             const modDate = new Date(file.mtime).toLocaleString();
             
             row.innerHTML = `
-                <td><i class="fas ${iconClass} file-icon"></i></td>
-                <td class="file-name">${escapeHtml(file.name)}</td>
+                <td class="file-name">
+                    <i class="fas ${iconClass} file-icon"></i>
+                    ${escapeHtml(file.name)}
+                </td>
                 <td>${fileSize}</td>
                 <td>${modDate}</td>
                 <td class="file-actions">
                     ${file.isDirectory 
-                        ? `<button class="open-dir" data-path="${escapeHtml(file.path)}"><i class="fas fa-folder-open"></i> Open</button>`
+                        ? `<button class="open-dir" data-path="${escapeHtml(file.path)}">
+                              <i class="fas fa-folder-open"></i> Open
+                           </button>`
                         : `
-                            <button class="view-file" data-path="${escapeHtml(file.path)}" data-type="${escapeHtml(file.type)}">
+                            <button class="view-file" data-path="${escapeHtml(file.path)}" data-type="${escapeHtml(file.type)}" data-name="${escapeHtml(file.name)}">
                                 <i class="fas fa-eye"></i> View
                             </button>
                             <button class="download-file" data-path="${escapeHtml(file.path)}">
@@ -100,6 +135,25 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 </td>
             `;
+            
+            // Add click event for the entire row
+            row.addEventListener('click', (e) => {
+                // Ignore clicks on buttons
+                if (e.target.closest('button')) {
+                    return;
+                }
+                
+                const isDirectory = row.getAttribute('data-is-dir') === 'true';
+                const path = row.getAttribute('data-path');
+                
+                if (isDirectory) {
+                    loadDirectoryContents(path);
+                } else {
+                    const fileType = row.getAttribute('data-type');
+                    const fileName = row.querySelector('.file-name').textContent.trim();
+                    previewFile(path, fileType, fileName);
+                }
+            });
             
             // Add event listeners to the buttons
             row.querySelectorAll('.open-dir').forEach(button => {
@@ -113,7 +167,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 button.addEventListener('click', () => {
                     const filePath = button.getAttribute('data-path');
                     const fileType = button.getAttribute('data-type');
-                    previewFile(filePath, fileType);
+                    const fileName = button.getAttribute('data-name');
+                    previewFile(filePath, fileType, fileName);
                 });
             });
             
@@ -126,9 +181,6 @@ document.addEventListener('DOMContentLoaded', () => {
             
             fileListBody.appendChild(row);
         });
-        
-        // Clear preview when changing directories
-        clearPreview();
     }
     
     function navigateToParentDirectory() {
@@ -146,22 +198,33 @@ document.addEventListener('DOMContentLoaded', () => {
         loadDirectoryContents(currentPath);
     }
     
-    function getHomeDirectory() {
-        // You might want to customize this based on the user's environment
-        return '/home';
+    function toggleHiddenFiles() {
+        showHiddenFiles = !showHiddenFiles;
+        toggleText.textContent = showHiddenFiles ? 'Hide Hidden' : 'Show Hidden';
+        refreshCurrentDirectory();
     }
     
-    function previewFile(filePath, fileType) {
-        clearPreview();
+    function getHomeDirectory() {
+        return '/home/simonsays/';
+    }
+    
+    function previewFile(filePath, fileType, fileName) {
+        // Clear previous content
+        while (filePreviewContent.firstChild) {
+            filePreviewContent.removeChild(filePreviewContent.firstChild);
+        }
         
-        if (fileType.startsWith('image/')) {
+        // Set filename in the modal header
+        previewFilename.textContent = fileName || 'File Preview';
+        
+        if (fileType && fileType.startsWith('image/')) {
             // Preview image
             const img = document.createElement('img');
             img.src = `/api/view?path=${encodeURIComponent(filePath)}`;
             img.alt = 'File preview';
             img.className = 'preview-image';
             img.onerror = () => {
-                showError('Failed to load image preview');
+                showPreviewError('Failed to load image preview');
             };
             filePreviewContent.appendChild(img);
         } else if (fileType === 'application/pdf') {
@@ -172,7 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
             iframe.style.height = '100%';
             iframe.style.border = 'none';
             filePreviewContent.appendChild(iframe);
-        } else if (fileType.startsWith('text/') || fileType.includes('javascript') || fileType.includes('json')) {
+        } else if (fileType && (fileType.startsWith('text/') || fileType.includes('javascript') || fileType.includes('json'))) {
             // Preview text
             fetchTextContent(filePath);
         } else {
@@ -192,6 +255,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 downloadFile(filePath);
             });
         }
+        
+        // Show the modal
+        previewModal.classList.add('show');
+    }
+    
+    function closePreviewModal() {
+        previewModal.classList.remove('show');
     }
     
     async function fetchTextContent(filePath) {
@@ -210,29 +280,27 @@ document.addEventListener('DOMContentLoaded', () => {
             pre.style.padding = '1rem';
             pre.style.backgroundColor = '#f5f5f5';
             pre.style.borderRadius = '4px';
+            pre.style.whiteSpace = 'pre-wrap';
+            pre.style.wordBreak = 'break-word';
             pre.textContent = text;
             
             filePreviewContent.appendChild(pre);
         } catch (error) {
             console.error('Error loading text content:', error);
-            showError(`Failed to load file: ${error.message}`);
+            showPreviewError(`Failed to load file: ${error.message}`);
         } finally {
             hideLoading();
         }
     }
     
-    function clearPreview() {
-        while (filePreviewContent.firstChild) {
-            filePreviewContent.removeChild(filePreviewContent.firstChild);
-        }
-        
-        const placeholder = document.createElement('div');
-        placeholder.className = 'preview-placeholder';
-        placeholder.innerHTML = `
-            <i class="fas fa-file-alt"></i>
-            <p>Select a file to preview</p>
+    function showPreviewError(message) {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'preview-error';
+        errorDiv.innerHTML = `
+            <i class="fas fa-exclamation-circle"></i>
+            <p>${escapeHtml(message)}</p>
         `;
-        filePreviewContent.appendChild(placeholder);
+        filePreviewContent.appendChild(errorDiv);
     }
     
     function downloadFile(filePath) {
@@ -272,7 +340,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function showError(message) {
-        // You could implement a more sophisticated error display here
         alert(message);
     }
 });
