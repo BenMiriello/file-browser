@@ -6,7 +6,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const homeDirButton = document.getElementById('home-dir');
     const refreshButton = document.getElementById('refresh');
     const toggleHiddenButton = document.getElementById('toggle-hidden');
-    const toggleText = document.getElementById('toggle-text');
     const previewModal = document.getElementById('preview-modal');
     const closePreviewButton = document.getElementById('close-preview');
     const previewFilename = document.getElementById('preview-filename');
@@ -44,9 +43,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 closePreviewModal();
             }
         });
+        
+        // Handle browser navigation
+        window.addEventListener('popstate', (event) => {
+            if (event.state && event.state.path) {
+                loadDirectoryContents(event.state.path, false);
+            }
+        });
+        
+        // Initialize browser history
+        window.history.replaceState({ path: currentPath }, '', `#${encodeURIComponent(currentPath)}`);
     }
     
-    async function loadDirectoryContents(path) {
+    async function loadDirectoryContents(path, updateHistory = true) {
         showLoading();
         try {
             const response = await fetch(`/api/files?path=${encodeURIComponent(path)}`);
@@ -59,6 +68,15 @@ document.addEventListener('DOMContentLoaded', () => {
             currentPathInput.value = currentPath;
             
             renderFileList(data.files);
+            
+            // Update browser history
+            if (updateHistory) {
+                window.history.pushState(
+                    { path: currentPath }, 
+                    '', 
+                    `#${encodeURIComponent(currentPath)}`
+                );
+            }
         } catch (error) {
             console.error('Error loading directory contents:', error);
             showError(`Failed to load directory: ${error.message}`);
@@ -200,7 +218,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function toggleHiddenFiles() {
         showHiddenFiles = !showHiddenFiles;
-        toggleText.textContent = showHiddenFiles ? 'Hide Hidden' : 'Show Hidden';
+        toggleHiddenButton.innerHTML = showHiddenFiles 
+            ? '<i class="fas fa-eye"></i> .files' 
+            : '<i class="fas fa-eye-slash"></i> .files';
         refreshCurrentDirectory();
     }
     
