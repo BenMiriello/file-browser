@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tailscale File Browser</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>Tailscale File Browser</h1>
+            <div class="path-navigation">
+                <input type="text" id="current-path" readonly>
+                <button id="parent-dir"><i class="fas fa-level-up-alt"></i> Parent Directory</button>
+                <button id="home-dir"><i class="fas fa-home"></i> Home</button>
+                <button id="refresh"><i class="fas fa-sync-alt"></i> Refresh</button>
+            </div>
+        </header>
+        
+        <main class="main-content">
+            <div class="file-list-container">
+                <table class="file-list">
+                    <thead>
+                        <tr>
+                            <th>Type</th>
+                            <th>Name</th>
+                            <th>Size</th>
+                            <th>Modified</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="file-list-body">
+                        <!-- File list will be populated here -->
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="file-preview" id="file-preview">
+                <div class="file-preview-content" id="file-preview-content">
+                    <div class="preview-placeholder">
+                        <i class="fas fa-file-alt"></i>
+                        <p>Select a file to preview</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+        
+        <div class="overlay" id="loading-overlay">
+            <div class="spinner"></div>
+        </div>
+    </div>
+    
+    <script src="app.js"></script>
+</body>
+</html>
