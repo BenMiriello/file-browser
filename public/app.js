@@ -6,21 +6,34 @@ document.addEventListener('DOMContentLoaded', () => {
     const homeDirButton = document.getElementById('home-dir');
     const refreshButton = document.getElementById('refresh');
     const toggleHiddenButton = document.getElementById('toggle-hidden');
+    const bookmarksButton = document.getElementById('bookmarks');
     const previewModal = document.getElementById('preview-modal');
     const closePreviewButton = document.getElementById('close-preview');
     const previewFilename = document.getElementById('preview-filename');
     const filePreviewContent = document.getElementById('file-preview-content');
+    const downloadPreviewButton = document.getElementById('download-preview-file');
     const loadingOverlay = document.getElementById('loading-overlay');
+    const bookmarksModal = document.getElementById('bookmarks-modal');
+    const closeBookmarksButton = document.getElementById('close-bookmarks');
+    const bookmarksList = document.getElementById('bookmarks-list');
+    const addBookmarkButton = document.getElementById('add-bookmark');
+    const editBookmarksButton = document.getElementById('edit-bookmarks');
     
     // Current state
     let currentPath = '';
     let homeDirectory = '';
     let showHiddenFiles = false;
+    let currentPreviewFilePath = '';
+    let isEditingBookmarks = false;
+    let bookmarks = [];
     
     // Initialize the app
     init();
     
     async function init() {
+        // Load bookmarks from localStorage
+        loadBookmarks();
+        
         // Fetch configuration from server
         try {
             const configResponse = await fetch('/api/config');
@@ -38,7 +51,16 @@ document.addEventListener('DOMContentLoaded', () => {
             homeDirButton.addEventListener('click', navigateToHomeDirectory);
             refreshButton.addEventListener('click', refreshCurrentDirectory);
             toggleHiddenButton.addEventListener('click', toggleHiddenFiles);
+            bookmarksButton.addEventListener('click', () => bookmarksModal.classList.add('show'));
             closePreviewButton.addEventListener('click', closePreviewModal);
+            closeBookmarksButton.addEventListener('click', () => bookmarksModal.classList.remove('show'));
+            addBookmarkButton.addEventListener('click', addCurrentPathToBookmarks);
+            editBookmarksButton.addEventListener('click', toggleEditBookmarks);
+            downloadPreviewButton.addEventListener('click', () => {
+                if (currentPreviewFilePath) {
+                    downloadFile(currentPreviewFilePath);
+                }
+            });
             
             // Allow path input and navigation
             currentPathInput.addEventListener('keydown', (e) => {
@@ -66,6 +88,108 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (error) {
             console.error('Error fetching configuration:', error);
             alert('Failed to initialize the application. Please refresh and try again.');
+        }
+    }
+    
+    // Bookmark functions
+    function loadBookmarks() {
+        try {
+            const savedBookmarks = localStorage.getItem('fileBrowserBookmarks');
+            if (savedBookmarks) {
+                bookmarks = JSON.parse(savedBookmarks);
+                renderBookmarks();
+            }
+        } catch (error) {
+            console.error('Error loading bookmarks:', error);
+            bookmarks = [];
+        }
+    }
+    
+    function saveBookmarks() {
+        try {
+            localStorage.setItem('fileBrowserBookmarks', JSON.stringify(bookmarks));
+        } catch (error) {
+            console.error('Error saving bookmarks:', error);
+        }
+    }
+    
+    function renderBookmarks() {
+        bookmarksList.innerHTML = '';
+        
+        if (bookmarks.length === 0) {
+            const li = document.createElement('li');
+            li.className = 'bookmark-item';
+            li.textContent = 'No bookmarks yet. Add some!';
+            bookmarksList.appendChild(li);
+            return;
+        }
+        
+        bookmarks.forEach((bookmark, index) => {
+            const li = document.createElement('li');
+            li.className = 'bookmark-item';
+            
+            li.innerHTML = `
+                <div class="bookmark-title">${escapeHtml(bookmark.title)}</div>
+                <div class="bookmark-path">${escapeHtml(bookmark.path)}</div>
+                <button class="bookmark-delete" data-index="${index}">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            `;
+            
+            li.addEventListener('click', (e) => {
+                // Don't navigate if clicking the delete button
+                if (e.target.closest('.bookmark-delete')) {
+                    return;
+                }
+                
+                loadDirectoryContents(bookmark.path);
+                bookmarksModal.classList.remove('show');
+            });
+            
+            bookmarksList.appendChild(li);
+        });
+        
+        // Add delete event listeners
+        document.querySelectorAll('.bookmark-delete').forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const index = parseInt(button.getAttribute('data-index'));
+                bookmarks.splice(index, 1);
+                saveBookmarks();
+                renderBookmarks();
+            });
+        });
+    }
+    
+    function addCurrentPathToBookmarks() {
+        // Extract folder name from path for the title
+        const pathParts = currentPath.split('/').filter(part => part !== '');
+        const folderName = pathParts.length > 0 ? pathParts[pathParts.length - 1] : 'Root';
+        
+        // Check if this path is already bookmarked
+        if (bookmarks.some(bookmark => bookmark.path === currentPath)) {
+            alert('This location is already bookmarked!');
+            return;
+        }
+        
+        bookmarks.push({
+            title: folderName,
+            path: currentPath
+        });
+        
+        saveBookmarks();
+        renderBookmarks();
+    }
+    
+    function toggleEditBookmarks() {
+        isEditingBookmarks = !isEditingBookmarks;
+        
+        if (isEditingBookmarks) {
+            bookmarksList.classList.add('editing');
+            editBookmarksButton.textContent = 'Done';
+        } else {
+            bookmarksList.classList.remove('editing');
+            editBookmarksButton.textContent = 'Edit';
         }
     }
     
@@ -120,6 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const row = document.createElement('tr');
             row.setAttribute('data-path', file.path);
             row.setAttribute('data-is-dir', file.isDirectory);
+            row.setAttribute('data-name', file.name);
             if (!file.isDirectory) {
                 row.setAttribute('data-type', file.type);
             }
@@ -147,34 +272,14 @@ document.addEventListener('DOMContentLoaded', () => {
             row.innerHTML = `
                 <td class="file-name">
                     <i class="fas ${iconClass} file-icon"></i>
-                    ${escapeHtml(file.name)}
+                    <span class="file-name-text">${escapeHtml(file.name)}</span>
                 </td>
                 <td>${fileSize}</td>
                 <td>${modDate}</td>
-                <td class="file-actions">
-                    ${file.isDirectory 
-                        ? `<button class="open-dir" data-path="${escapeHtml(file.path)}" title="Open">
-                              <i class="fas fa-folder-open"></i>
-                           </button>`
-                        : `
-                            <button class="view-file" data-path="${escapeHtml(file.path)}" data-type="${escapeHtml(file.type)}" data-name="${escapeHtml(file.name)}" title="View">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                            <button class="download-file" data-path="${escapeHtml(file.path)}" title="Download">
-                                <i class="fas fa-download"></i>
-                            </button>
-                        `
-                    }
-                </td>
             `;
             
             // Add click event for the entire row
-            row.addEventListener('click', (e) => {
-                // Ignore clicks on buttons
-                if (e.target.closest('button')) {
-                    return;
-                }
-                
+            row.addEventListener('click', () => {
                 const isDirectory = row.getAttribute('data-is-dir') === 'true';
                 const path = row.getAttribute('data-path');
                 
@@ -182,33 +287,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     loadDirectoryContents(path);
                 } else {
                     const fileType = row.getAttribute('data-type');
-                    const fileName = row.querySelector('.file-name').textContent.trim();
+                    const fileName = row.getAttribute('data-name');
                     previewFile(path, fileType, fileName);
                 }
-            });
-            
-            // Add event listeners to the buttons
-            row.querySelectorAll('.open-dir').forEach(button => {
-                button.addEventListener('click', () => {
-                    const dirPath = button.getAttribute('data-path');
-                    loadDirectoryContents(dirPath);
-                });
-            });
-            
-            row.querySelectorAll('.view-file').forEach(button => {
-                button.addEventListener('click', () => {
-                    const filePath = button.getAttribute('data-path');
-                    const fileType = button.getAttribute('data-type');
-                    const fileName = button.getAttribute('data-name');
-                    previewFile(filePath, fileType, fileName);
-                });
-            });
-            
-            row.querySelectorAll('.download-file').forEach(button => {
-                button.addEventListener('click', () => {
-                    const filePath = button.getAttribute('data-path');
-                    downloadFile(filePath);
-                });
             });
             
             fileListBody.appendChild(row);
@@ -233,8 +314,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function toggleHiddenFiles() {
         showHiddenFiles = !showHiddenFiles;
         toggleHiddenButton.innerHTML = showHiddenFiles 
-            ? '<i class="fas fa-eye"></i> .files' 
-            : '<i class="fas fa-eye-slash"></i> .files';
+            ? '<i class="fas fa-eye"></i>' 
+            : '<i class="fas fa-eye-slash"></i>';
         refreshCurrentDirectory();
     }
     
@@ -243,6 +324,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function previewFile(filePath, fileType, fileName) {
+        // Set current preview file path for download button
+        currentPreviewFilePath = filePath;
+        
         // Clear previous content
         while (filePreviewContent.firstChild) {
             filePreviewContent.removeChild(filePreviewContent.firstChild);
@@ -279,15 +363,8 @@ document.addEventListener('DOMContentLoaded', () => {
             msg.innerHTML = `
                 <i class="fas fa-file"></i>
                 <p>No preview available for this file type</p>
-                <button id="download-preview-file" class="download-file">
-                    <i class="fas fa-download"></i> Download File
-                </button>
             `;
             filePreviewContent.appendChild(msg);
-            
-            document.getElementById('download-preview-file').addEventListener('click', () => {
-                downloadFile(filePath);
-            });
         }
         
         // Show the modal
@@ -296,6 +373,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function closePreviewModal() {
         previewModal.classList.remove('show');
+        currentPreviewFilePath = '';
     }
     
     async function fetchTextContent(filePath) {
