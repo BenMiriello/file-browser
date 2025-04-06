@@ -1,14 +1,14 @@
 {
-  "name": "debian-file-browser",
+  "name": "file-browser",
   "version": "1.0.0",
-  "description": "A file browser accessible via Tailscale",
+  "description": "A web-based file browser accessible from any device",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js"
   },
   "config": {
-    "port": 3002,
+    "port": 4002,
     "homeDirectory": "/home/benmiriello/"
   },
   "dependencies": {
