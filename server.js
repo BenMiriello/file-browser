@@ -1,4 +1,4 @@
-// file-browser-server.js
+// server.js
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
@@ -8,15 +8,24 @@ const stat = util.promisify(fs.stat);
 const cors = require('cors');
 const morgan = require('morgan');
 const mime = require('mime-types');
+const packageJson = require('./package.json');
 
 const app = express();
-const PORT = 3002;
+const PORT = process.env.PORT || packageJson.config.port || 3002;
+const HOME_DIRECTORY = process.env.HOME_DIRECTORY || packageJson.config.homeDirectory || '/home';
 
 // Configure middleware
 app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
 app.use(express.static('public'));
+
+// Make configuration accessible to the frontend
+app.get('/api/config', (req, res) => {
+  res.json({
+    homeDirectory: HOME_DIRECTORY
+  });
+});
 
 // Serve the main HTML file
 app.get('/', (req, res) => {
@@ -119,5 +128,6 @@ app.get('/api/view', (req, res) => {
 // Start the server
 app.listen(PORT, () => {
   console.log(`File browser server running on port ${PORT}`);
+  console.log(`Home directory set to: ${HOME_DIRECTORY}`);
   console.log(`Access it through your Tailscale network at http://<your-server-hostname>:${PORT}`);
 });
