@@ -73,9 +73,8 @@ body {
     border-radius: 4px;
     background-color: rgba(255, 255, 255, 0.9);
     font-size: 0.9rem;
-    text-align: right;
-    direction: rtl;
     text-overflow: ellipsis;
+    overflow: hidden;
 }
 
 #parent-dir {
@@ -197,7 +196,8 @@ body {
 
 .file-actions {
     display: flex;
-    gap: 0.5rem;
+    gap: 0.25rem;
+    justify-content: flex-end;
     white-space: nowrap;
 }
 
@@ -205,9 +205,13 @@ body {
     background-color: var(--secondary-color);
     border: 1px solid var(--border-color);
     border-radius: 4px;
-    padding: 0.25rem 0.5rem;
+    padding: 0.4rem;
     cursor: pointer;
     transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2rem;
 }
 
 .file-actions button:hover {
@@ -350,27 +354,48 @@ img.preview-image {
 /* Table column widths */
 .file-list th:nth-child(1),
 .file-list td:nth-child(1) {
-    width: 50%;
+    width: 60%;
     min-width: 120px;
 }
 
 .file-list th:nth-child(2),
 .file-list td:nth-child(2) {
     width: 10%;
-    min-width: 60px;
+    min-width: 40px;
+    text-align: right;
 }
 
 .file-list th:nth-child(3),
 .file-list td:nth-child(3) {
     width: 15%;
-    min-width: 80px;
+    min-width: 60px;
 }
 
 .file-list th:nth-child(4),
 .file-list td:nth-child(4) {
-    width: 25%;
-    min-width: 100px;
-    white-space: nowrap;
+    width: 15%;
+    min-width: 60px;
+    text-align: right;
+}
+
+/* Show text labels on wider screens */
+@media (min-width: 769px) {
+    .file-actions button::after {
+        content: attr(title);
+        margin-left: 0.25rem;
+    }
+    
+    .main-content {
+        flex-direction: row;
+    }
+    
+    .file-list-container {
+        width: 65%;
+    }
+    
+    .file-preview {
+        width: 35%;
+    }
 }
 
 /* Responsive styles */
@@ -401,19 +426,5 @@ img.preview-image {
     .file-list td {
         padding: 0.5rem 0.25rem;
         font-size: 0.9rem;
-    }
-}
-
-@media (min-width: 769px) {
-    .main-content {
-        flex-direction: row;
-    }
-    
-    .file-list-container {
-        width: 65%;
-    }
-    
-    .file-preview {
-        width: 35%;
     }
 }
