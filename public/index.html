@@ -3,22 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Debian File Browser</title>
+    <title>File Browser</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
     <div class="container">
         <header class="header">
-            <h1>Debian File Browser</h1>
+            <h1>File Browser</h1>
             <div class="path-input-container">
                 <input type="text" id="current-path">
-                <button id="parent-dir"><i class="fas fa-level-up-alt"></i></button>
+                <button id="parent-dir" title="Parent Directory"><i class="fas fa-level-up-alt"></i></button>
             </div>
             <div class="path-buttons">
-                <button id="home-dir"><i class="fas fa-home"></i> Home</button>
-                <button id="refresh"><i class="fas fa-sync-alt"></i></button>
-                <button id="toggle-hidden"><i class="fas fa-eye-slash"></i> .files</button>
+                <button id="home-dir" title="Home"><i class="fas fa-home"></i></button>
+                <button id="refresh" title="Refresh"><i class="fas fa-sync-alt"></i></button>
+                <button id="toggle-hidden" title="Show/Hide Hidden Files"><i class="fas fa-eye-slash"></i></button>
+                <button id="bookmarks" title="Bookmarks"><i class="fas fa-bookmark"></i></button>
             </div>
         </header>
         
@@ -31,7 +32,6 @@
                                 <th>Name</th>
                                 <th>Size</th>
                                 <th>Modified</th>
-                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody id="file-list-body">
@@ -49,7 +49,12 @@
         <div class="modal" id="preview-modal">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h3 id="preview-filename">File Preview</h3>
+                    <div class="modal-title-container">
+                        <h3 id="preview-filename">File Preview</h3>
+                        <button id="download-preview-file" class="download-button" title="Download File">
+                            <i class="fas fa-download"></i>
+                        </button>
+                    </div>
                     <button class="close-modal" id="close-preview">&times;</button>
                 </div>
                 <div class="modal-body">
@@ -59,6 +64,24 @@
                             <p>Loading preview...</p>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="modal" id="bookmarks-modal">
+            <div class="modal-content bookmarks-content">
+                <div class="modal-header">
+                    <h3>Bookmarks</h3>
+                    <button class="close-modal" id="close-bookmarks">&times;</button>
+                </div>
+                <div class="bookmarks-header">
+                    <button id="add-bookmark">Add Bookmark <i class="fas fa-plus"></i></button>
+                    <button id="edit-bookmarks">Edit</button>
+                </div>
+                <div class="modal-body">
+                    <ul id="bookmarks-list">
+                        <!-- Bookmarks will be populated here -->
+                    </ul>
                 </div>
             </div>
         </div>
