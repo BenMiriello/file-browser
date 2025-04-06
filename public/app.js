@@ -13,46 +13,60 @@ document.addEventListener('DOMContentLoaded', () => {
     const loadingOverlay = document.getElementById('loading-overlay');
     
     // Current state
-    let currentPath = '/home/simonsays/';
+    let currentPath = '';
+    let homeDirectory = '';
     let showHiddenFiles = false;
     
     // Initialize the app
     init();
     
-    function init() {
-        // Initial data load
-        loadDirectoryContents(currentPath);
-        
-        // Event listeners
-        parentDirButton.addEventListener('click', navigateToParentDirectory);
-        homeDirButton.addEventListener('click', navigateToHomeDirectory);
-        refreshButton.addEventListener('click', refreshCurrentDirectory);
-        toggleHiddenButton.addEventListener('click', toggleHiddenFiles);
-        closePreviewButton.addEventListener('click', closePreviewModal);
-        
-        // Allow path input and navigation
-        currentPathInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                loadDirectoryContents(currentPathInput.value);
-            }
-        });
-        
-        // Close modal when clicking outside content
-        previewModal.addEventListener('click', (e) => {
-            if (e.target === previewModal) {
-                closePreviewModal();
-            }
-        });
-        
-        // Handle browser navigation
-        window.addEventListener('popstate', (event) => {
-            if (event.state && event.state.path) {
-                loadDirectoryContents(event.state.path, false);
-            }
-        });
-        
-        // Initialize browser history
-        window.history.replaceState({ path: currentPath }, '', `#${encodeURIComponent(currentPath)}`);
+    async function init() {
+        // Fetch configuration from server
+        try {
+            const configResponse = await fetch('/api/config');
+            const config = await configResponse.json();
+            homeDirectory = config.homeDirectory;
+            
+            // Set initial path to home directory
+            currentPath = homeDirectory;
+            
+            // Initial data load
+            loadDirectoryContents(currentPath);
+            
+            // Event listeners
+            parentDirButton.addEventListener('click', navigateToParentDirectory);
+            homeDirButton.addEventListener('click', navigateToHomeDirectory);
+            refreshButton.addEventListener('click', refreshCurrentDirectory);
+            toggleHiddenButton.addEventListener('click', toggleHiddenFiles);
+            closePreviewButton.addEventListener('click', closePreviewModal);
+            
+            // Allow path input and navigation
+            currentPathInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    loadDirectoryContents(currentPathInput.value);
+                }
+            });
+            
+            // Close modal when clicking outside content
+            previewModal.addEventListener('click', (e) => {
+                if (e.target === previewModal) {
+                    closePreviewModal();
+                }
+            });
+            
+            // Handle browser navigation
+            window.addEventListener('popstate', (event) => {
+                if (event.state && event.state.path) {
+                    loadDirectoryContents(event.state.path, false);
+                }
+            });
+            
+            // Initialize browser history
+            window.history.replaceState({ path: currentPath }, '', `#${encodeURIComponent(currentPath)}`);
+        } catch (error) {
+            console.error('Error fetching configuration:', error);
+            alert('Failed to initialize the application. Please refresh and try again.');
+        }
     }
     
     async function loadDirectoryContents(path, updateHistory = true) {
@@ -139,15 +153,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 <td>${modDate}</td>
                 <td class="file-actions">
                     ${file.isDirectory 
-                        ? `<button class="open-dir" data-path="${escapeHtml(file.path)}">
-                              <i class="fas fa-folder-open"></i> Open
+                        ? `<button class="open-dir" data-path="${escapeHtml(file.path)}" title="Open">
+                              <i class="fas fa-folder-open"></i>
                            </button>`
                         : `
-                            <button class="view-file" data-path="${escapeHtml(file.path)}" data-type="${escapeHtml(file.type)}" data-name="${escapeHtml(file.name)}">
-                                <i class="fas fa-eye"></i> View
+                            <button class="view-file" data-path="${escapeHtml(file.path)}" data-type="${escapeHtml(file.type)}" data-name="${escapeHtml(file.name)}" title="View">
+                                <i class="fas fa-eye"></i>
                             </button>
-                            <button class="download-file" data-path="${escapeHtml(file.path)}">
-                                <i class="fas fa-download"></i> Download
+                            <button class="download-file" data-path="${escapeHtml(file.path)}" title="Download">
+                                <i class="fas fa-download"></i>
                             </button>
                         `
                     }
@@ -225,7 +239,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     
     function getHomeDirectory() {
-        return '/home/simonsays/';
+        return homeDirectory;
     }
     
     function previewFile(filePath, fileType, fileName) {
