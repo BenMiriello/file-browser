@@ -11,7 +11,7 @@ const mime = require('mime-types');
 const packageJson = require('./package.json');
 
 const app = express();
-const PORT = process.env.PORT || packageJson.config.port || 3002;
+const PORT = process.env.PORT || packageJson.config.port || 4002;
 const HOME_DIRECTORY = process.env.HOME_DIRECTORY || packageJson.config.homeDirectory || '/home';
 
 // Configure middleware
@@ -129,5 +129,5 @@ app.get('/api/view', (req, res) => {
 app.listen(PORT, () => {
   console.log(`File browser server running on port ${PORT}`);
   console.log(`Home directory set to: ${HOME_DIRECTORY}`);
-  console.log(`Access it through your Tailscale network at http://<your-server-hostname>:${PORT}`);
+  console.log(`Access it through your network at http://<your-server-hostname>:${PORT}`);
 });
