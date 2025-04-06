@@ -1,12 +1,15 @@
-# Debian File Browser
+# File Browser
 
-A lightweight web-based file browser that lets you access your Debian server's files through a browser from any device on your Tailscale network.
+A lightweight web-based file browser that lets you access your server's files through a browser from any device on your network.
+
+![File Browser Screenshot](https://user-images.githubusercontent.com/40286278/67158168-8c2c5f00-f309-11e9-9d42-42a3ce5b1e55.png)
 
 ## Features
 
-- Browse your server's file system from any device
+- Browse your file system from any device
 - View images, text files, and PDFs directly in the browser
 - Download files to your local device
+- Bookmark favorite locations for quick access
 - Mobile-friendly responsive design
 - Browser history integration for back/forward navigation
 - Toggle hidden files (dotfiles) visibility
@@ -16,8 +19,6 @@ A lightweight web-based file browser that lets you access your Debian server's f
 
 - Node.js (v14 or higher)
 - npm (Node Package Manager)
-- A Debian server
-- [Tailscale](https://tailscale.com/) installed and configured on both server and client devices
 
 ## Installation
 
@@ -35,7 +36,7 @@ A lightweight web-based file browser that lets you access your Debian server's f
 3. Configure the application in `package.json`:
    ```json
    "config": {
-     "port": 3002,
+     "port": 4002,
      "homeDirectory": "/home/yourusername/"
    }
    ```
@@ -50,13 +51,21 @@ Start the server with:
 npm start
 ```
 
-Access the file browser from any device on your Tailscale network by navigating to:
+Access the file browser from any device on your network by navigating to:
 
 ```
-http://your-server-hostname:3002
+http://your-server-hostname:4002
 ```
 
-Replace `your-server-hostname` with your server's Tailscale hostname or IP address.
+Replace `your-server-hostname` with your server's hostname or IP address.
+
+### Accessing Remotely with Tailscale (Optional)
+
+If you need to access your file browser from outside your local network, you can use [Tailscale](https://tailscale.com/) for secure remote access:
+
+1. Install Tailscale on your server and client devices
+2. Connect both devices to your Tailscale network
+3. Access the file browser using your server's Tailscale IP or hostname
 
 ### Running as a Service (Keeping the Server Running)
 
@@ -70,7 +79,7 @@ To keep the file browser running even after you log out, you can set it up as a 
 2. Add the following configuration (replace paths and username):
    ```
    [Unit]
-   Description=Debian File Browser
+   Description=File Browser
    After=network.target
 
    [Service]
@@ -109,7 +118,7 @@ sudo journalctl -u file-browser -f
 
 You can configure the following options in the `config` section of your `package.json`:
 
-- `port`: The port the server will listen on (default: 3002)
+- `port`: The port the server will listen on (default: 4002)
 - `homeDirectory`: The default directory to show when accessing the file browser
 
 You can also set these values using environment variables:
@@ -118,15 +127,42 @@ You can also set these values using environment variables:
 PORT=3003 HOME_DIRECTORY=/mnt/data npm start
 ```
 
+## Features Guide
+
+### Bookmarks
+
+- Click the bookmark icon to open the bookmarks modal
+- Click "Add Bookmark" to bookmark your current location
+- Click on a bookmark to navigate directly to that location
+- Click "Edit" to enable the delete buttons for removing bookmarks
+
+### File Viewer
+
+- Click on any file to preview it directly in the browser
+- Text files, images, and PDFs are viewable in the browser
+- Use the download button in the viewer to save files to your device
+
+### Navigation
+
+- Click on folders to navigate into them
+- Use the parent directory button (^) to navigate up one level
+- Click the home button to return to your configured home directory
+- The browser's back and forward buttons work as expected
+
 ## Security Considerations
 
-This application is designed for use within a private Tailscale network. It does not include authentication or encryption beyond what Tailscale provides. Do not expose this service directly to the internet.
+This application is designed for use within a private network. If you need to expose it to the internet, consider using Tailscale or implementing additional security measures such as:
+
+- Strong authentication
+- HTTPS encryption
+- Rate limiting
+- Restricted directory access
 
 ## Troubleshooting
 
-- **Can't access the file browser**: Make sure Tailscale is running on both the server and client devices.
-- **Permission errors**: Ensure the user running the service has read access to the directories you're trying to browse.
-- **Service won't start**: Check the logs with `sudo journalctl -u file-browser -e` for detailed error messages.
+- **Can't access the file browser**: Ensure your firewall allows traffic on the configured port
+- **Permission errors**: Make sure the user running the service has read access to the directories you're trying to browse
+- **Service won't start**: Check the logs with `sudo journalctl -u file-browser -e` for detailed error messages
 
 ## License
 
