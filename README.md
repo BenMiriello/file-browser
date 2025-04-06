@@ -2,8 +2,6 @@
 
 A lightweight web-based file browser that lets you access your Debian server's files through a browser from any device on your Tailscale network.
 
-![Debian File Browser Screenshot](https://user-images.githubusercontent.com/40286278/67158168-8c2c5f00-f309-11e9-9d42-42a3ce5b1e55.png)
-
 ## Features
 
 - Browse your server's file system from any device
